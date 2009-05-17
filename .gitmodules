@@ -1,0 +1,3 @@
+[submodule "src/vendor/eventlet"]
+	path = src/vendor/eventlet
+	url = git://github.com/careo/eventlet.git
