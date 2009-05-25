@@ -38,7 +38,7 @@ class QosWorker
   private
   
     def signal( sig )
-      Process.kill( sig, Process.pid )
+      Process.kill( sig, $$ )
     end
   
     def simulate
@@ -85,6 +85,6 @@ class QosWorker
 end
 
 if __FILE__ == $0
-  @worker = QosWorker.new
-  @worker.do_work
+  worker = QosWorker.new
+  worker.do_work
 end
