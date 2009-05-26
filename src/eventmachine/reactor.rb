@@ -1,7 +1,12 @@
 require 'rubygems'
 require 'eventmachine'
 
-EM.run do
-  sleep 5
-  EM.stop
+Thread.new do
+  EM.run do
+    puts 'start machine in a background thread'
+  end
 end
+
+puts 'main thread'
+
+sleep 1
