@@ -5,7 +5,7 @@ require 'eventlet/async_channel'
 module Football
   include Eventlets
   
-  class OneToOnePlay < AsyncChannel    
+  class OneToOnePlay < Channel    
   end
   
   class OneToManyPlay < Event
@@ -26,7 +26,7 @@ module Football
     end
     
     def random
-      @targets.first#[rand(@targets.size)][:player]
+      @targets[rand(@targets.size)][:player]
     end
     
   end
@@ -37,10 +37,38 @@ module Football
   class CrossHeader < OneToManyPlay
   end      
   
-  class Player < Struct.new( :name )
+  class Human < Struct.new( :name )
+
     def to_s
       self.name.to_s 
     end
+
+    private
+    
+      def interaction( action, other_player, delay )
+        EM.add_timer( delay ) do
+          channel = OneToOnePlay.new
+          Eventlets::Eventlet.spawn do  
+            channel.send( [self, action, other_player] )
+          end  
+          Eventlets::Eventlet.spawn do  
+            msg = channel.receive
+            puts "#{msg[0]} #{msg[1].to_s} #{msg[2]}"
+          end
+        end
+      end
+      
+      def interactions( event, msg, delay, &block )
+        EM.add_timer( delay ) do
+          intr = event.new
+          block.call( intr )
+          intr.send( msg )
+        end
+      end
+    
+  end  
+  
+  class Player < Human
     
     def kicks_to( other_player, delay = 0 )
       interaction( :kicks_to, other_player, delay ) 
@@ -58,49 +86,30 @@ module Football
       interactions( CrossHeader, [self, :headers, direction] , delay, &block )
     end    
     
-    def fowls( other_player )
+    def fowls( other_player, delay = 0 )
       interaction( :fowls, other_player, delay )
     end
     
-    def punches_at( other_player )
+    def punches_at( other_player, delay = 0 )
       interaction( :punches, other_player, delay )
     end
 
     def punches( direction, delay = 0 )
       interactions( event, [self, :punches, direction] , delay )
     end
-
-    private
     
-      def interaction( action, other_player, delay )
-        channel = OneToOnePlay.new
-        Eventlets::Eventlet.spawn do  
-          channel.send( [self, action, other_player] )
-        end  
-        Eventlets::Eventlet.spawn do  
-          msg = channel.receive
-          puts "#{msg[0]} #{msg[1].to_s} #{msg[2]}"
-        end
-      end
-      
-      def interactions( event, msg, delay, &block )
-        EM.add_timer( delay ) do
-          intr = event.new
-          block.call(intr)
-          puts intr.inspect
-          intr.send( msg )
-        end  
-      end
+    def argues_with( player_or_referee, delay = 0 )
+      interaction( :argues_with, player_or_referee, delay )
+    end  
       
   end
 
-  class Team < Struct.new( :name, :players )
-    def to_s
-      self.name.to_s  
-    end      
-  end
-  
-  class Game < Struct.new( :team, :other_team )
+  class Referee < Human
+    
+    def red_cards( player, delay = 0 )
+      interaction( :red_cards, player, delay )
+    end
+    
   end
 
 end
@@ -110,7 +119,7 @@ zidane = Football::Player.new( :zidane )
 ronaldo = Football::Player.new( :ronaldo )
 saha = Football::Player.new( :saha )
 
-players = [ beckham, zidane, ronaldo, :saha ]
+referee = Football::Referee.new( :big_cheese )
 
 EM.run do
   
@@ -119,5 +128,6 @@ EM.run do
     plrs << ronaldo
     plrs << saha
   end
+  ronaldo.fowls( saha, 2 )
   
 end

@@ -1,3 +1,9 @@
 [submodule "src/vendor/eventlet"]
 	path = src/vendor/eventlet
 	url = git://github.com/careo/eventlet.git
+[submodule "src/vendor/fiber18"]
+	path = src/vendor/fiber18
+	url = git@github.com:tmm1/fiber18.git
+[submodule "src/vendor/em-spec"]
+	path = src/vendor/em-spec
+	url = git://github.com/tmm1/em-spec.git
